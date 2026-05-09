@@ -1,0 +1,17 @@
+{
+  "name": "DigiGold Premium",
+  "short_name": "DigiGold",
+  "description": "The ultimate premium platform to Buy, Sell, and SIP digital gold.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
