@@ -50,10 +50,28 @@ export type SipState = {
   nextDate?: string;
 };
 
+export type BankDetails = {
+  accountHolder: string;
+  accountNumber: string;
+  ifsc: string;
+  bankName: string;
+  accountType: "savings" | "current";
+};
+
+export type AddressDetails = {
+  line1: string;
+  line2: string;
+  city: string;
+  state: string;
+  pincode: string;
+};
+
 export type ProfileState = {
   displayName: string;
   phone: string;
   kycTier: "none" | "pan_submitted" | "verified";
+  bank: BankDetails;
+  address: AddressDetails;
 };
 
 export type SettingsState = {

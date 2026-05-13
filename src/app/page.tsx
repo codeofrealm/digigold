@@ -1,315 +1,316 @@
 "use client";
-
 import Link from "next/link";
-import { useGoldDemo } from "@/context/GoldDemoProvider";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useGoldDemo } from "@/context/GoldDemoProvider";
+import { useAuth } from "@/context/AuthContext";
+import { doc, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
-function formatInr(n: number) {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(n);
+function fmt(n: number) {
+  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
+}
+function fmtExact(n: number) {
+  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
 }
 
-function formatGrams(g: number) {
-  return `${g.toFixed(4)} g`;
-}
+const SLABS = [
+  { label: "₹500 – ₹4,999",  pct: 5,    bar: 100 },
+  { label: "₹5K – ₹24,999",  pct: 3.75, bar: 75  },
+  { label: "₹25K – ₹99,999", pct: 2,    bar: 40  },
+  { label: "₹1 Lakh+",       pct: 0.75, bar: 15  },
+];
 
-function formatCompact(n: number) {
-  if (n >= 100000) return `${(n / 100000).toFixed(2)}L`;
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
-  return n.toFixed(0);
+const BANNERS = [
+  { bg: "from-[#7b1c1c] to-[#b8860b]", title: "Buy Gold from ₹10", sub: "24K 999 purity · MMTC-PAMP certified", cta: "Buy Now", href: "/trade" },
+  { bg: "from-[#1a4731] to-[#15803d]", title: "Start Gold SIP Today", sub: "Automate savings · As low as ₹500/month", cta: "Start SIP", href: "/plan" },
+  { bg: "from-[#1e3a5f] to-[#1d4ed8]", title: "Gift Gold to Loved Ones", sub: "Send digital gold instantly", cta: "Gift Now", href: "/plan" },
+];
+
+function greeting() {
+  const h = new Date().getHours();
+  return h < 12 ? "Good Morning" : h < 17 ? "Good Afternoon" : "Good Evening";
 }
 
 export default function HomePage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
   const {
-    pricePerGramInr,
-    priceSilverPerGramInr,
-    balanceGrams,
-    balanceSilverGrams,
-    walletInr,
-    portfolioInr,
-    sip,
-    inAppNotifications,
-    dismissNotification,
+    pricePerGramInr, priceSilverPerGramInr,
+    priceStatus, goldChangePct, silverChangePct,
+    balanceGrams, balanceSilverGrams,
+    walletInr, portfolioInr, sip,
+    inAppNotifications, dismissNotification,
   } = useGoldDemo();
 
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const [bannerIdx, setBannerIdx] = useState(0);
+  const [rateCard, setRateCard] = useState({ gold10g24k: 0, gold10g22k: 0, silver10g: 0, silver50g: 0 });
 
-  const goldValue = balanceGrams * pricePerGramInr;
-  const silverValue = balanceSilverGrams * priceSilverPerGramInr;
-  const totalMetalValue = goldValue + silverValue;
+  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => { if (!loading && !user) router.replace("/login"); }, [user, loading, router]);
+  useEffect(() => {
+    const t = setInterval(() => setBannerIdx(i => (i + 1) % BANNERS.length), 3500);
+    return () => clearInterval(t);
+  }, []);
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "prices", "ratecard"), (snap) => {
+      if (snap.exists()) {
+        const d = snap.data();
+        setRateCard({ gold10g24k: d.gold10g24k || 0, gold10g22k: d.gold10g22k || 0, silver10g: d.silver10g || 0, silver50g: d.silver50g || 0 });
+      }
+    }, () => {});
+    return () => unsub();
+  }, []);
 
-  if (!mounted) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="w-8 h-8 border-2 border-[var(--gold-primary)] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  if (!mounted || loading || !user) return (
+    <div className="flex items-center justify-center h-full">
+      <svg className="spin" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#b8860b" strokeWidth="2.5">
+        <circle cx="12" cy="12" r="10" strokeOpacity="0.3"/><path d="M12 2a10 10 0 0 1 10 10"/>
+      </svg>
+    </div>
+  );
+
+  const goldVal   = balanceGrams * pricePerGramInr;
+  const silverVal = balanceSilverGrams * priceSilverPerGramInr;
+  const b = BANNERS[bannerIdx];
+  const goldUp    = goldChangePct >= 0;
+  const silverUp  = silverChangePct >= 0;
 
   return (
-    <div className="page-enter px-5 py-4 pb-6 flex flex-col gap-5">
+    <div className="page-enter flex flex-col gap-0 pb-6">
 
-      {/* Header */}
-      <header className="flex items-center justify-between">
-        <div>
-          <p className="text-[13px] text-zinc-400 font-medium">Good {getGreeting()},</p>
-          <h1 className="text-[22px] font-bold text-white tracking-tight mt-0.5">DigiGold</h1>
-        </div>
-        <div className="flex items-center gap-3">
-          {/* Notification Bell */}
-          <Link
-            href="/account"
-            className="relative w-10 h-10 flex items-center justify-center rounded-full bg-white/[0.05] border border-white/[0.08] active:scale-90 transition-transform"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-300">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-            </svg>
-            {inAppNotifications.length > 0 && (
-              <div className="absolute -top-0.5 -right-0.5 w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center">
-                <span className="text-[9px] font-bold text-white">{inAppNotifications.length > 9 ? "9+" : inAppNotifications.length}</span>
-              </div>
-            )}
-          </Link>
-          {/* Profile */}
-          <Link
-            href="/account"
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-gradient-to-br from-[var(--gold-primary)] to-[var(--gold-dark)] active:scale-90 transition-transform"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-          </Link>
-        </div>
-      </header>
-
-      {/* Notification Banner */}
-      {inAppNotifications.length > 0 && (
-        <div className="flex items-center gap-3 card p-3 border-l-[3px] border-l-[var(--gold-primary)]">
-          <div className="shrink-0 w-2 h-2 rounded-full bg-[var(--gold-primary)] live-dot" />
-          <p className="flex-1 text-[12px] text-zinc-300 font-medium leading-snug">
-            {inAppNotifications[0].message}
+      {/* ── Portfolio Card ── */}
+      <div className="bg-gradient-to-b from-[#b8860b]/10 to-transparent px-4 pt-4 pb-2">
+        <div className="bg-gradient-to-br from-[#7b1c1c] to-[#b8860b] rounded-2xl p-4">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-[11px] font-bold text-white/60 uppercase tracking-wider">Total Portfolio</p>
+            <div className="flex items-center gap-1.5 bg-white/10 rounded-full px-2.5 py-1">
+              <div className={`w-1.5 h-1.5 rounded-full ${priceStatus === "live" ? "bg-emerald-400 live-dot" : "bg-yellow-400"}`} />
+              <span className={`text-[10px] font-bold ${priceStatus === "live" ? "text-emerald-300" : "text-yellow-300"}`}>
+                {priceStatus === "live" ? "LIVE" : "CACHED"}
+              </span>
+            </div>
+          </div>
+          {/* Portfolio total — updates every 3s with live ticker */}
+          <p className="text-[32px] font-extrabold text-white tabular-nums leading-none mt-1 transition-all duration-700">
+            {fmt(portfolioInr)}
           </p>
-          <button
-            type="button"
-            onClick={() => dismissNotification(inAppNotifications[0].id)}
-            className="shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-white/[0.05] active:scale-90 transition-transform"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="text-zinc-400">
-              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+          <p className="text-[11px] text-white/50 mt-1.5">
+            Wallet <span className="text-white/80 font-semibold">{fmt(walletInr)}</span>
+            {" · "}Metals <span className="text-white/80 font-semibold transition-all duration-700">{fmt(goldVal + silverVal)}</span>
+          </p>
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            <div className="bg-white/10 rounded-xl p-2.5">
+              <p className="text-[10px] font-bold text-[#F5C842]/80 uppercase tracking-wider">Gold 24K</p>
+              <p className="text-[14px] font-bold text-[#F5C842]">{balanceGrams.toFixed(4)} g</p>
+              <p className="text-[11px] font-semibold text-[#F5C842]/90 transition-all duration-700">{fmt(goldVal)}</p>
+              <p className="text-[10px] text-white/40 mt-0.5 transition-all duration-700">
+                @ ₹{pricePerGramInr.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/g
+              </p>
+            </div>
+            <div className="bg-white/10 rounded-xl p-2.5">
+              <p className="text-[10px] font-bold text-white/60 uppercase tracking-wider">Silver 999</p>
+              <p className="text-[14px] font-bold text-white/90">{balanceSilverGrams.toFixed(2)} g</p>
+              <p className="text-[11px] font-semibold text-white/80 transition-all duration-700">{fmt(silverVal)}</p>
+              <p className="text-[10px] text-white/40 mt-0.5 transition-all duration-700">
+                @ ₹{priceSilverPerGramInr.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/g
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Notification ── */}
+      {inAppNotifications.length > 0 && (
+        <div className="mx-4 mt-3 flex items-center gap-3 bg-[#fdf3d0] border border-[#e8c84a] rounded-2xl px-3 py-2.5">
+          <div className="w-2 h-2 rounded-full bg-[#b8860b] live-dot shrink-0" />
+          <p className="flex-1 text-[12px] font-semibold text-[#7b4a00] leading-snug">{inAppNotifications[0].message}</p>
+          <button type="button" onClick={() => dismissNotification(inAppNotifications[0].id)}
+            className="w-6 h-6 flex items-center justify-center rounded-full bg-[#e8c84a]/30 active:scale-90 transition-transform shrink-0">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#7b4a00" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
       )}
 
-      {/* Portfolio Card */}
-      <section className="relative rounded-[24px] overflow-hidden">
-        {/* Gold gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#1a1708] via-[#141210] to-[#0c0b09]" />
-        <div className="absolute inset-0 opacity-30 bg-[radial-gradient(ellipse_at_top_right,rgba(245,200,66,0.2)_0%,transparent_60%)]" />
-        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[var(--gold-primary)]/30 to-transparent" />
+      <div className="px-4 flex flex-col gap-4 mt-4">
 
-        <div className="relative p-5">
+        {/* ── Promo Banner ── */}
+        <div className={`relative rounded-2xl overflow-hidden bg-gradient-to-r ${b.bg} p-5 min-h-[110px]`}>
+          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_bottom_right,#fff_0%,transparent_60%)]" />
+          <p className="text-[18px] font-extrabold text-white leading-tight relative">{b.title}</p>
+          <p className="text-[12px] text-white/70 mt-1 relative">{b.sub}</p>
+          <Link href={b.href} className="mt-3 inline-flex items-center gap-1.5 bg-white/20 border border-white/30 rounded-xl px-4 py-2 text-[13px] font-bold text-white active:scale-95 transition-transform relative">
+            {b.cta}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </Link>
+          <div className="absolute bottom-3 right-4 flex gap-1.5">
+            {BANNERS.map((_, i) => (
+              <button key={i} type="button" onClick={() => setBannerIdx(i)}
+                className={`h-1.5 rounded-full transition-all ${i === bannerIdx ? "bg-white w-4" : "bg-white/40 w-1.5"}`} />
+            ))}
+          </div>
+        </div>
+
+        {/* ── Live Prices (exact from gold-api.com) ── */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[14px] font-bold text-[#1c1208]">Live Market Prices</p>
+            <div className="flex items-center gap-1.5">
+              <div className={`w-1.5 h-1.5 rounded-full ${priceStatus === "live" ? "bg-emerald-500 live-dot" : "bg-yellow-500"}`} />
+              <span className="text-[11px] text-[#9a8060] font-medium">
+                {priceStatus === "live" ? "gold-api.com · Live" : "Cached"}
+              </span>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {/* Gold */}
+            <div className="card p-4 relative overflow-hidden">
+              <div className="absolute inset-0 shimmer" />
+              <div className="relative">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <span className="text-[16px]">🥇</span>
+                  <span className="text-[11px] font-bold text-[#9a8060] uppercase tracking-wider">Gold 24K</span>
+                </div>
+                <p className="text-[11px] text-[#9a8060] mb-0.5">Per gram (INR)</p>
+                <p className="text-[22px] font-extrabold text-[#b8860b] tabular-nums leading-none">
+                  ₹{pricePerGramInr.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+                <p className="text-[10px] text-[#9a8060] mt-1">999 purity · 24 Karat</p>
+              </div>
+            </div>
+            {/* Silver */}
+            <div className="card p-4">
+              <div className="flex items-center gap-1.5 mb-2">
+                <span className="text-[16px]">🥈</span>
+                <span className="text-[11px] font-bold text-[#9a8060] uppercase tracking-wider">Silver 999</span>
+              </div>
+              <p className="text-[11px] text-[#9a8060] mb-0.5">Per gram (INR)</p>
+              <p className="text-[22px] font-extrabold text-[#5a5a5a] tabular-nums leading-none">
+                ₹{priceSilverPerGramInr.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+              <p className="text-[10px] text-[#9a8060] mt-1">999 purity · Fine Silver</p>
+            </div>
+          </div>
+
+          {/* Total gold value banner */}
+          <div className="mt-3 bg-gradient-to-r from-[#fdf3d0] to-[#fff8e8] border border-[#e8c84a] rounded-2xl px-4 py-3 flex items-center justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-[#9a8060] uppercase tracking-wider">Your Gold Value Today</p>
+              <p className="text-[22px] font-extrabold text-[#b8860b] tabular-nums">
+                ₹{goldVal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+              <p className="text-[10px] text-[#9a8060] mt-0.5">
+                {balanceGrams.toFixed(4)}g × ₹{pricePerGramInr.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/g
+              </p>
+            </div>
+            <span className="text-[28px]">🥇</span>
+          </div>
+
+          {/* Total silver value banner */}
+          <div className="mt-2 bg-[#f5f5f5] border border-[#d0d0d0] rounded-2xl px-4 py-3 flex items-center justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-[#9a8060] uppercase tracking-wider">Your Silver Value Today</p>
+              <p className="text-[22px] font-extrabold text-[#5a5a5a] tabular-nums">
+                ₹{silverVal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+              <p className="text-[10px] text-[#9a8060] mt-0.5">
+                {balanceSilverGrams.toFixed(2)}g × ₹{priceSilverPerGramInr.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/g
+              </p>
+            </div>
+            <span className="text-[28px]">🥈</span>
+          </div>
+        </div>
+
+        {/* ── Rate Card ── */}
+        {(rateCard.gold10g24k > 0 || rateCard.silver10g > 0) && (
+          <div className="card p-4">
+            <p className="text-[14px] font-bold text-[#1c1208] mb-3">Today&apos;s Rate Card</p>
+            {rateCard.gold10g24k > 0 && (
+              <>
+                <p className="text-[11px] font-bold text-[#9a8060] uppercase tracking-wider mb-2">🥇 Gold Rates</p>
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <div className="bg-[#fdf3d0] border border-[#e8c84a] rounded-xl p-3 text-center">
+                    <p className="text-[10px] font-bold text-[#9a8060] uppercase tracking-wider">10g · 24K</p>
+                    <p className="text-[18px] font-extrabold text-[#b8860b] tabular-nums mt-1">₹{rateCard.gold10g24k.toLocaleString("en-IN")}</p>
+                    <p className="text-[10px] text-[#9a8060] mt-0.5">24 Karat · 999 purity</p>
+                  </div>
+                  <div className="bg-[#fdf3d0] border border-[#e8c84a] rounded-xl p-3 text-center">
+                    <p className="text-[10px] font-bold text-[#9a8060] uppercase tracking-wider">10g · 22K</p>
+                    <p className="text-[18px] font-extrabold text-[#b8860b] tabular-nums mt-1">₹{rateCard.gold10g22k.toLocaleString("en-IN")}</p>
+                    <p className="text-[10px] text-[#9a8060] mt-0.5">22 Karat · 916 purity</p>
+                  </div>
+                </div>
+              </>
+            )}
+            {rateCard.silver10g > 0 && (
+              <>
+                <p className="text-[11px] font-bold text-[#9a8060] uppercase tracking-wider mb-2">🥈 Silver Rates</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-[#f5f5f5] border border-[#d0d0d0] rounded-xl p-3 text-center">
+                    <p className="text-[10px] font-bold text-[#9a8060] uppercase tracking-wider">10g · 999</p>
+                    <p className="text-[18px] font-extrabold text-[#5a5a5a] tabular-nums mt-1">₹{rateCard.silver10g.toLocaleString("en-IN")}</p>
+                    <p className="text-[10px] text-[#9a8060] mt-0.5">Fine Silver · 999</p>
+                  </div>
+                  <div className="bg-[#f5f5f5] border border-[#d0d0d0] rounded-xl p-3 text-center">
+                    <p className="text-[10px] font-bold text-[#9a8060] uppercase tracking-wider">50g · 999</p>
+                    <p className="text-[18px] font-extrabold text-[#5a5a5a] tabular-nums mt-1">₹{rateCard.silver50g.toLocaleString("en-IN")}</p>
+                    <p className="text-[10px] text-[#9a8060] mt-0.5">Fine Silver · 999</p>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+
+        {/* ── Savings Slab ── */}
+        <div className="card p-4">
           <div className="flex items-center justify-between mb-1">
-            <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.12em]">Total Portfolio</p>
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.05]">
-              <div className="w-[5px] h-[5px] rounded-full bg-emerald-400 live-dot" />
-              <span className="text-[10px] font-semibold text-emerald-400">LIVE</span>
-            </div>
+            <p className="text-[14px] font-bold text-[#1c1208]">Savings Slab Benefits</p>
+            <span className="badge-gold">Up to 5%</span>
           </div>
-
-          <h2 className="text-[36px] font-extrabold text-white tabular-nums tracking-tight leading-none mt-2">
-            {formatInr(portfolioInr)}
-          </h2>
-
-          <p className="text-[12px] text-zinc-500 mt-2">
-            Wallet: <span className="text-zinc-300">{formatInr(walletInr)}</span> · Metals: <span className="text-zinc-300">{formatInr(totalMetalValue)}</span>
-          </p>
-
-          {/* Gold & Silver Holdings */}
-          <div className="grid grid-cols-2 gap-3 mt-5">
-            <div className="rounded-2xl bg-white/[0.04] border border-white/[0.06] p-3.5">
-              <div className="flex items-center gap-2 mb-2.5">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--gold-secondary)] to-[var(--gold-dark)] flex items-center justify-center shadow-lg">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#000" stroke="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          <p className="text-[11px] text-[#9a8060] mb-4">Invest more, save more on every purchase</p>
+          <div className="flex flex-col gap-3">
+            {SLABS.map(s => (
+              <div key={s.label}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[12px] font-semibold text-[#5a4a2a]">{s.label}</span>
+                  <span className="text-[13px] font-bold text-[#b8860b]">{s.pct}% off</span>
                 </div>
-                <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">Gold</span>
-              </div>
-              <p className="text-[17px] font-bold text-[var(--gold-secondary)] tabular-nums">
-                {formatGrams(balanceGrams)}
-              </p>
-              <p className="text-[11px] text-zinc-500 mt-1 tabular-nums">{formatInr(goldValue)}</p>
-            </div>
-
-            <div className="rounded-2xl bg-white/[0.04] border border-white/[0.06] p-3.5">
-              <div className="flex items-center gap-2 mb-2.5">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--silver-light)] to-zinc-400 flex items-center justify-center shadow-lg">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#000" stroke="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                <div className="h-2 rounded-full bg-[#f0e8d8] overflow-hidden">
+                  <div className="h-full rounded-full" style={{ width: `${s.bar}%`, background: "linear-gradient(90deg,#d4a017,#b8860b)" }} />
                 </div>
-                <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">Silver</span>
               </div>
-              <p className="text-[17px] font-bold text-zinc-200 tabular-nums">
-                {formatGrams(balanceSilverGrams)}
-              </p>
-              <p className="text-[11px] text-zinc-500 mt-1 tabular-nums">{formatInr(silverValue)}</p>
-            </div>
+            ))}
+          </div>
+          <Link href="/trade" className="btn-gold w-full mt-4 text-[14px]">Start Buying Gold</Link>
+        </div>
+
+        {/* ── SIP Banner ── */}
+        <Link href="/plan" className="card p-4 flex items-center gap-3 active:scale-[0.98] transition-transform">
+          <div className="w-12 h-12 rounded-2xl bg-[#fdf3d0] border border-[#e8c84a] flex items-center justify-center shrink-0">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#b8860b" strokeWidth="2" strokeLinecap="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[14px] font-bold text-[#1c1208]">{sip.active ? "Gold SIP Active ✓" : "Start a Gold SIP"}</p>
+            <p className="text-[12px] text-[#9a8060] mt-0.5">{sip.active ? `₹${sip.amountInr} / ${sip.frequency}` : "Automate your gold savings"}</p>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c8b090" strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </Link>
+
+        {/* ── Trust ── */}
+        <div className="card p-4 bg-[#f0fdf4] border-[#bbf7d0] flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div>
+            <p className="text-[13px] font-bold text-emerald-800">100% Secure & Insured</p>
+            <p className="text-[11px] text-emerald-600 mt-0.5">MMTC-PAMP certified vaults · RBI regulated</p>
           </div>
         </div>
-      </section>
 
-      {/* Live Prices */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-[15px] font-bold text-white">Live Prices</h3>
-          <div className="flex items-center gap-1.5">
-            <div className="w-[5px] h-[5px] rounded-full bg-emerald-400 live-dot" />
-            <span className="text-[11px] text-zinc-500 font-medium">Real-time</span>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="card p-4 relative overflow-hidden active:scale-[0.97] transition-transform">
-            <div className="absolute inset-0 shimmer-gold" />
-            <div className="relative">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-6 h-6 rounded-full bg-[var(--gold-primary)]/20 flex items-center justify-center">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[var(--gold-primary)]" />
-                </div>
-                <span className="text-[12px] font-semibold text-zinc-400">Gold / g</span>
-              </div>
-              <p className="text-[22px] font-extrabold text-white tabular-nums">
-                {formatInr(pricePerGramInr)}
-              </p>
-              <p className="text-[11px] text-emerald-400 font-medium mt-1">24K • 999 purity</p>
-            </div>
-          </div>
-
-          <div className="card p-4 relative overflow-hidden active:scale-[0.97] transition-transform">
-            <div className="relative">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-6 h-6 rounded-full bg-zinc-500/20 flex items-center justify-center">
-                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-400" />
-                </div>
-                <span className="text-[12px] font-semibold text-zinc-400">Silver / g</span>
-              </div>
-              <p className="text-[22px] font-extrabold text-white tabular-nums">
-                {formatInr(priceSilverPerGramInr)}
-              </p>
-              <p className="text-[11px] text-zinc-500 font-medium mt-1">999 purity</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Quick Actions */}
-      <section>
-        <h3 className="text-[15px] font-bold text-white mb-3">Quick Actions</h3>
-        <div className="grid grid-cols-4 gap-2">
-          <QuickAction href="/trade" label="Buy" color="gold">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          </QuickAction>
-          <QuickAction href="/trade" label="Sell" color="white">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          </QuickAction>
-          <QuickAction href="/plan" label="SIP" color="green">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
-            </svg>
-          </QuickAction>
-          <QuickAction href="/plan" label="Gift" color="pink">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 12 20 22 4 22 4 12" /><rect x="2" y="7" width="20" height="5" /><line x1="12" y1="22" x2="12" y2="7" /><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" /><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
-            </svg>
-          </QuickAction>
-        </div>
-      </section>
-
-      {/* SIP Banner */}
-      <Link
-        href="/plan"
-        className="card p-4 flex items-center gap-4 active:scale-[0.98] transition-transform border-[var(--gold-primary)]/10"
-      >
-        <div className="shrink-0 w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--gold-primary)]/20 to-[var(--gold-primary)]/5 flex items-center justify-center border border-[var(--gold-primary)]/20">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--gold-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-            <polyline points="17 6 23 6 23 12" />
-          </svg>
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[14px] font-bold text-white">
-            {sip.active ? "Gold SIP Active" : "Start a SIP"}
-          </p>
-          <p className="text-[12px] text-zinc-400 mt-0.5">
-            {sip.active
-              ? `${formatInr(sip.amountInr)} / ${sip.frequency} in ${sip.metal}`
-              : "Automate your gold savings today"}
-          </p>
-        </div>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-500 shrink-0">
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
-      </Link>
-
-      {/* Safety banner */}
-      <div className="card p-4 flex items-center gap-3">
-        <div className="shrink-0 w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-          </svg>
-        </div>
-        <div className="flex-1">
-          <p className="text-[13px] font-semibold text-white">100% Secure & Insured</p>
-          <p className="text-[11px] text-zinc-500 mt-0.5">Your gold is stored in MMTC-PAMP certified vaults</p>
-        </div>
       </div>
-
-      {/* Bottom spacer */}
-      <div className="h-2" />
     </div>
-  );
-}
-
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return "Morning";
-  if (h < 17) return "Afternoon";
-  return "Evening";
-}
-
-function QuickAction({
-  href,
-  label,
-  color,
-  children,
-}: {
-  href: string;
-  label: string;
-  color: "gold" | "white" | "green" | "pink";
-  children: React.ReactNode;
-}) {
-  const colorMap = {
-    gold: { bg: "bg-[var(--gold-primary)]/15", text: "text-[var(--gold-primary)]", border: "border-[var(--gold-primary)]/20" },
-    white: { bg: "bg-white/[0.06]", text: "text-zinc-300", border: "border-white/[0.08]" },
-    green: { bg: "bg-emerald-500/15", text: "text-emerald-400", border: "border-emerald-500/20" },
-    pink: { bg: "bg-pink-500/15", text: "text-pink-400", border: "border-pink-500/20" },
-  };
-  const c = colorMap[color];
-
-  return (
-    <Link
-      href={href}
-      className={`flex flex-col items-center gap-2 py-3 rounded-2xl ${c.bg} border ${c.border} active:scale-90 transition-transform`}
-    >
-      <div className={c.text}>{children}</div>
-      <span className="text-[11px] font-semibold text-zinc-300">{label}</span>
-    </Link>
   );
 }
