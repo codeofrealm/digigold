@@ -1,0 +1,80 @@
+[debug] [2026-05-13T05:06:00.854Z] ----------------------------------------------------------------------
+[debug] [2026-05-13T05:06:00.864Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Rahul\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only firestore:rules
+[debug] [2026-05-13T05:06:00.865Z] CLI Version:   15.17.0
+[debug] [2026-05-13T05:06:00.865Z] Platform:      win32
+[debug] [2026-05-13T05:06:00.866Z] Node Version:  v24.15.0
+[debug] [2026-05-13T05:06:00.866Z] Time:          Tue May 12 2026 22:06:00 GMT-0700 (Pacific Daylight Time)
+[debug] [2026-05-13T05:06:00.866Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-05-13T05:06:05.110Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-05-13T05:06:05.112Z] > authorizing via signed-in user (rahul91598308@gmail.com)
+[debug] [2026-05-13T05:06:05.112Z] [iam] checking project digigold-2d74a for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]
+[debug] [2026-05-13T05:06:05.114Z] Checked if tokens are valid: false, expires at: 1778588422277
+[debug] [2026-05-13T05:06:05.115Z] Checked if tokens are valid: false, expires at: 1778588422277
+[debug] [2026-05-13T05:06:05.115Z] > refreshing access token with scopes: []
+[debug] [2026-05-13T05:06:05.119Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-05-13T05:06:05.119Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-05-13T05:06:05.443Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-05-13T05:06:05.444Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-05-13T05:06:05.461Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/digigold-2d74a:testIamPermissions [none]
+[debug] [2026-05-13T05:06:05.462Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/digigold-2d74a:testIamPermissions  x-goog-user-project=digigold-2d74a
+[debug] [2026-05-13T05:06:05.462Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/digigold-2d74a:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[debug] [2026-05-13T05:06:06.850Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/digigold-2d74a:testIamPermissions 200
+[debug] [2026-05-13T05:06:06.851Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/digigold-2d74a:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[info] 
+[info] === Deploying to 'digigold-2d74a'...
+[info] 
+[info] i  deploying firestore 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[debug] [2026-05-13T05:06:06.862Z] Checked if tokens are valid: true, expires at: 1778652364444
+[debug] [2026-05-13T05:06:06.862Z] Checked if tokens are valid: true, expires at: 1778652364444
+[debug] [2026-05-13T05:06:06.863Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/digigold-2d74a/services/firestore.googleapis.com [none]
+[debug] [2026-05-13T05:06:06.863Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/digigold-2d74a/services/firestore.googleapis.com  x-goog-user-project=digigold-2d74a
+[debug] [2026-05-13T05:06:08.657Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/digigold-2d74a/services/firestore.googleapis.com 200
+[debug] [2026-05-13T05:06:08.658Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/digigold-2d74a/services/firestore.googleapis.com [omitted]
+[info] +  firestore: required API firestore.googleapis.com is enabled 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[debug] [2026-05-13T05:06:08.668Z] Checked if tokens are valid: true, expires at: 1778652364444
+[debug] [2026-05-13T05:06:08.668Z] Checked if tokens are valid: true, expires at: 1778652364444
+[debug] [2026-05-13T05:06:08.669Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/digigold-2d74a/databases/(default) [none]
+[debug] [2026-05-13T05:06:10.370Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/digigold-2d74a/databases/(default) 200
+[debug] [2026-05-13T05:06:10.371Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/digigold-2d74a/databases/(default) {"name":"projects/digigold-2d74a/databases/(default)","uid":"09a3ecc0-b888-4059-a39c-4b7e53e47dda","createTime":"2026-05-11T12:07:07.852325Z","updateTime":"2026-05-11T12:07:07.852325Z","locationId":"nam5","type":"FIRESTORE_NATIVE","concurrencyMode":"PESSIMISTIC","versionRetentionPeriod":"3600s","earliestVersionTime":"2026-05-13T04:06:09.166568Z","appEngineIntegrationMode":"DISABLED","keyPrefix":"s","pointInTimeRecoveryEnablement":"POINT_IN_TIME_RECOVERY_DISABLED","deleteProtectionState":"DELETE_PROTECTION_DISABLED","databaseEdition":"STANDARD","freeTier":true,"realtimeUpdatesMode":"REALTIME_UPDATES_MODE_ENABLED","etag":"IN30w4C/tZQDMPXV4M/0spQD"}
+[info] i  cloud.firestore: checking firestore.rules for compilation errors... 
+[debug] [2026-05-13T05:06:10.373Z] Checked if tokens are valid: true, expires at: 1778652364444
+[debug] [2026-05-13T05:06:10.373Z] Checked if tokens are valid: true, expires at: 1778652364444
+[debug] [2026-05-13T05:06:10.374Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/digigold-2d74a:test [none]
+[debug] [2026-05-13T05:06:10.374Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/digigold-2d74a:test [omitted]
+[debug] [2026-05-13T05:06:11.850Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/digigold-2d74a:test 200
+[debug] [2026-05-13T05:06:11.851Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/digigold-2d74a:test {}
+[info] +  cloud.firestore: rules file firestore.rules compiled successfully 
+[debug] [2026-05-13T05:06:11.853Z] Checked if tokens are valid: true, expires at: 1778652364444
+[debug] [2026-05-13T05:06:11.853Z] Checked if tokens are valid: true, expires at: 1778652364444
+[debug] [2026-05-13T05:06:11.854Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/digigold-2d74a/releases pageSize=10&pageToken=
+[debug] [2026-05-13T05:06:13.172Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/digigold-2d74a/releases 200
+[debug] [2026-05-13T05:06:13.173Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/digigold-2d74a/releases {"releases":[{"name":"projects/digigold-2d74a/releases/cloud.firestore","rulesetName":"projects/digigold-2d74a/rulesets/05313667-e94b-48c2-9582-3a6ae214da25","createTime":"2026-05-11T12:07:13.988780Z","updateTime":"2026-05-12T08:30:37.039808Z"}]}
+[debug] [2026-05-13T05:06:13.174Z] Checked if tokens are valid: true, expires at: 1778652364444
+[debug] [2026-05-13T05:06:13.174Z] Checked if tokens are valid: true, expires at: 1778652364444
+[debug] [2026-05-13T05:06:13.175Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/digigold-2d74a/rulesets/05313667-e94b-48c2-9582-3a6ae214da25 [none]
+[debug] [2026-05-13T05:06:14.527Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/digigold-2d74a/rulesets/05313667-e94b-48c2-9582-3a6ae214da25 200
+[debug] [2026-05-13T05:06:14.527Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/digigold-2d74a/rulesets/05313667-e94b-48c2-9582-3a6ae214da25 [omitted]
+[info] i  firestore: uploading rules firestore.rules... 
+[debug] [2026-05-13T05:06:14.530Z] Checked if tokens are valid: true, expires at: 1778652364444
+[debug] [2026-05-13T05:06:14.531Z] Checked if tokens are valid: true, expires at: 1778652364444
+[debug] [2026-05-13T05:06:14.531Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/digigold-2d74a/rulesets [none]
+[debug] [2026-05-13T05:06:14.532Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/digigold-2d74a/rulesets [omitted]
+[debug] [2026-05-13T05:06:16.460Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/digigold-2d74a/rulesets 200
+[debug] [2026-05-13T05:06:16.460Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/digigold-2d74a/rulesets {"name":"projects/digigold-2d74a/rulesets/c78112bc-bf30-4e7c-bf7a-7175d572e53c","source":{"files":[{"content":"rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n\n    match /prices/{doc} {\n      allow read: if true;\n      allow write: if true;\n    }\n\n    match /shop_products/{doc} {\n      allow read: if true;\n      allow write: if true;\n    }\n\n    match /orders/{doc} {\n      allow read: if true;\n      allow write: if true;\n    }\n\n    match /users/{userId} {\n      allow read, write: if true;\n    }\n\n    match /otp/{doc} {\n      allow read, write: if true;\n    }\n  }\n}\n","name":"firestore.rules"}]},"createTime":"2026-05-13T05:06:15.239375Z","metadata":{"services":["cloud.firestore"]}}
+[debug] [2026-05-13T05:06:16.461Z] [rules] created ruleset projects/digigold-2d74a/rulesets/c78112bc-bf30-4e7c-bf7a-7175d572e53c
+[debug] [2026-05-13T05:06:16.462Z] [rules] releasing cloud.firestore with ruleset projects/digigold-2d74a/rulesets/c78112bc-bf30-4e7c-bf7a-7175d572e53c
+[debug] [2026-05-13T05:06:16.463Z] Checked if tokens are valid: true, expires at: 1778652364444
+[debug] [2026-05-13T05:06:16.463Z] Checked if tokens are valid: true, expires at: 1778652364444
+[debug] [2026-05-13T05:06:16.463Z] >>> [apiv2][query] PATCH https://firebaserules.googleapis.com/v1/projects/digigold-2d74a/releases/cloud.firestore [none]
+[debug] [2026-05-13T05:06:16.464Z] >>> [apiv2][body] PATCH https://firebaserules.googleapis.com/v1/projects/digigold-2d74a/releases/cloud.firestore {"release":{"name":"projects/digigold-2d74a/releases/cloud.firestore","rulesetName":"projects/digigold-2d74a/rulesets/c78112bc-bf30-4e7c-bf7a-7175d572e53c"}}
+[debug] [2026-05-13T05:06:17.864Z] <<< [apiv2][status] PATCH https://firebaserules.googleapis.com/v1/projects/digigold-2d74a/releases/cloud.firestore 200
+[debug] [2026-05-13T05:06:17.864Z] <<< [apiv2][body] PATCH https://firebaserules.googleapis.com/v1/projects/digigold-2d74a/releases/cloud.firestore {"name":"projects/digigold-2d74a/releases/cloud.firestore","rulesetName":"projects/digigold-2d74a/rulesets/c78112bc-bf30-4e7c-bf7a-7175d572e53c","createTime":"2026-05-11T12:07:13.988780Z","updateTime":"2026-05-13T05:06:16.654212Z"}
+[debug] [2026-05-13T05:06:17.864Z] [rules] updated release projects/digigold-2d74a/releases/cloud.firestore
+[info] +  firestore: released rules firestore.rules to cloud.firestore 
+[info] 
+[info] +  Deploy complete! 
+[info] 
+[info] Project Console: https://console.firebase.google.com/project/digigold-2d74a/overview
